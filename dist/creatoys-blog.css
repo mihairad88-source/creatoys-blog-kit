@@ -1,5 +1,5 @@
 /*!
- * Creatoys Blog Kit v1.5.0
+ * Creatoys Blog Kit v1.5.1
  * Sistemul de design pentru articolele de pe creatoys.ro/blog.
  * Totul e sub .ct-article, ca să nu atingă tema XStore.
  */
@@ -321,6 +321,7 @@
   .ct-livebar__vals b{font-size:1.05rem;color:#B0612A;white-space:nowrap}
   .ct-livebar__vals b.is-best{color:var(--ct-green-deep)}
   .ct-livebar .ct-btn{min-height:44px;padding:.55rem 1rem;font-size:.95rem;white-space:nowrap}
+  body.ct-livebar-on .back-top{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important;transition:bottom .25s ease}
 }
 .ct-costresult{margin-top:1rem;background:var(--ct-white);border-radius:18px;padding:1.1rem 1.2rem}
 .ct-costverdict{font-size:1.15rem;line-height:1.45;margin:0 0 1rem!important;color:var(--ct-ink)}

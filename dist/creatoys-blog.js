@@ -1,5 +1,5 @@
 /*!
- * Creatoys Blog Kit v1.5.0
+ * Creatoys Blog Kit v1.5.1
  * Module pentru articolele de pe creatoys.ro/blog. Fără dependențe.
  * Principiu: articolul e complet și fără acest fișier; scriptul adaugă date live și interactivitate.
  */
@@ -426,7 +426,11 @@
     // bara cu rezultatul: doar pe ecrane înguste, cât calculatorul e la vedere și rezultatul nu
     if ("IntersectionObserver" in window) {
       var bar = root.querySelector(".ct-livebar"), toolOn = false, resOn = false, mq = window.matchMedia("(max-width: 700px)");
-      var upd = function () { bar.classList.toggle("is-on", mq.matches && toolOn && !resOn); };
+      var upd = function () {
+        var on = mq.matches && toolOn && !resOn;
+        bar.classList.toggle("is-on", on);
+        document.body.classList.toggle("ct-livebar-on", on); // butoanele plutitoare ale temei urcă deasupra barei
+      };
       new IntersectionObserver(function (e) { toolOn = e[0].isIntersecting; upd(); }, { rootMargin: "0px 0px -35% 0px" }).observe(root.querySelector(".ct-costgrid"));
       new IntersectionObserver(function (e) { resOn = e[0].isIntersecting; upd(); }, { threshold: 0.35 }).observe(root.querySelector(".ct-costresult"));
       if (mq.addEventListener) mq.addEventListener("change", upd);
