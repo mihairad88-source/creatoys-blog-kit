@@ -290,8 +290,8 @@
       { id: 743159, label: "Bilele din lemn Grapat, 36 de piese", price: 99 },
       { id: 16196, label: "Traseul Quercetti Migoga Basic", price: 109 }
     ];
-    var EXAMPLE = { a: { name: "", price: 150, f: 1, d: 0 }, b: { name: "MAGNA-TILES Clear Colors, 32 de piese", price: 238, f: 2, d: 3 } };
-    var state = store("cost2") || JSON.parse(JSON.stringify(EXAMPLE));
+    var EXAMPLE = { a: { name: "", price: 150, f: 1, d: 1 }, b: { name: "MAGNA-TILES Clear Colors, 32 de piese", price: 238, f: 2, d: 3 } };
+    var state = store("cost3") || JSON.parse(JSON.stringify(EXAMPLE));
     var started = false;
 
     function seg(side, key, list) {
@@ -337,7 +337,7 @@
       sync();
       var A = state.a, B = state.b, ha = hours(A), hb = hours(B), ca = A.price / ha, cb = B.price / hb;
       var best = ca <= cb ? "a" : "b", ratio = Math.max(ca, cb) / Math.min(ca, cb), max = Math.max(ca, cb);
-      var r = ratio >= 10 ? Math.round(ratio) : ratio.toFixed(1).replace(".", ",");
+      var rn = ratio >= 10 ? Math.round(ratio) : null, r = rn ? rn + (rn % 100 >= 20 || rn % 100 === 0 ? " de" : "") : ratio.toFixed(1).replace(".", ",");
       var verdict = ratio < 1.15 ? "Cele două jucării te costă cam la fel pe oră de joacă."
         : "Cu <strong>" + esc(name(best)) + "</strong>, ora de joacă iese de " + r + " ori mai ieftină" +
           (state[best].price > state[best === "a" ? "b" : "a"].price ? ", deși costă mai mult la cumpărare." : ".");
@@ -349,7 +349,7 @@
       }
       root.querySelector(".ct-costresult").innerHTML = '<p class="ct-costverdict">' + verdict + "</p>" + row("a", A, ha, ca) + row("b", B, hb, cb) +
         '<p class="ct-costnote">Calculul: prețul împărțit la orele de joacă. Orele vin din ce ai ales mai sus, deci sunt estimarea ta.</p>';
-      store("cost2", state);
+      store("cost3", state);
     }
     function first() { if (!started) { started = true; track("ct_tool_start", { tool: "cost_ora" }); } }
     root.addEventListener("input", function (e) {
