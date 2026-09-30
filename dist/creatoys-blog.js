@@ -1,5 +1,5 @@
 /*!
- * Creatoys Blog Kit v1.4.0
+ * Creatoys Blog Kit v1.5.0
  * Module pentru articolele de pe creatoys.ro/blog. Fără dependențe.
  * Principiu: articolul e complet și fără acest fișier; scriptul adaugă date live și interactivitate.
  */
@@ -310,11 +310,18 @@
         '<p class="ct-step"><span class="ct-step__n">3</span> Cât timp o va folosi</p>' + seg(side, "d", DUR) + "</div>";
     }
     root.innerHTML =
-      '<div class="ct-costgrid">' +
+      '<p class="ct-costintro">Am completat deja un exemplu obișnuit. Schimbă doar ce e diferit la tine.</p>' +
+      '<div class="ct-tabs" role="tablist" aria-label="Alege jucăria">' +
+      '<button type="button" role="tab" class="ct-tab" data-tab="a" aria-selected="true">Jucăria clasică <b data-tabval="a"></b></button>' +
+      '<button type="button" role="tab" class="ct-tab" data-tab="b" aria-selected="false">Jucăria open-ended <b data-tabval="b"></b></button></div>' +
+      '<div class="ct-costgrid" data-active="a">' +
       card("a", "Jucăria clasică", "Cu butoane, sunete sau o singură funcție. Una pe care o ai sau pe care o vezi în magazin.") +
       card("b", "Jucăria open-ended", "Una care nu îți spune ce să faci cu ea. Alege din magazin sau trage bara.") + "</div>" +
       '<div class="ct-costresult" aria-live="polite"></div>' +
-      '<div class="ct-tool__actions"><button type="button" class="ct-btn ct-btn--outline" data-r="reset">Înapoi la exemplu</button></div>';
+      '<div class="ct-tool__actions"><button type="button" class="ct-btn ct-btn--outline" data-r="reset">Înapoi la exemplu</button></div>' +
+      '<div class="ct-livebar" role="region" aria-label="Rezultatul pe scurt"><div class="ct-livebar__vals">' +
+      '<span><small>Clasică</small><b data-live="a"></b></span><span><small>Open-ended</small><b data-live="b"></b></span></div>' +
+      '<button type="button" class="ct-btn" data-r="jump">Vezi rezultatul</button></div>';
 
     function hours(t) { return FREQ[t.f].h * WEEKS_PER_MONTH * DUR[t.d].m; }
     function name(side) { return state[side].name || (side === "a" ? "jucăria clasică" : "jucăria open-ended"); }
@@ -329,6 +336,9 @@
             b.setAttribute("aria-pressed", String(+b.getAttribute("data-i") === state[side][k]));
           });
           root.querySelector('[data-hint="' + side + k + '"]').textContent = (k === "f" ? FREQ : DUR)[state[side][k]].hint;
+          // pe telefon rândul se derulează: aducem varianta aleasă la vedere
+          var sel = root.querySelector('.ct-choice[data-side="' + side + '"][data-key="' + k + '"][aria-checked="true"]');
+          if (sel && sel.parentElement.scrollWidth > sel.parentElement.clientWidth) sel.parentElement.scrollLeft = Math.max(0, sel.offsetLeft - sel.parentElement.offsetLeft - 12);
         });
       });
     }
@@ -346,6 +356,12 @@
           '<div class="ct-bar"><span style="width:' + Math.max(3, Math.round(c / max * 100)) + '%"></span></div>' +
           '<p class="ct-costrow__meta">' + lei(t.price) + " la cumpărare · cam " + ore(Math.round(h)) + " de joacă în total</p></div>";
       }
+      ["a", "b"].forEach(function (s) {
+        var c = s === "a" ? ca : cb;
+        root.querySelector('[data-live="' + s + '"]').textContent = lei(c) + "/oră";
+        root.querySelector('[data-tabval="' + s + '"]').textContent = lei(c) + "/oră";
+        root.querySelector('[data-live="' + s + '"]').className = s === best ? "is-best" : "";
+      });
       root.querySelector(".ct-costresult").innerHTML = '<p class="ct-costverdict">' + verdict + "</p>" + row("a", A, ha, ca) + row("b", B, hb, cb) +
         '<p class="ct-costnote">Calculul: prețul împărțit la orele de joacă. Orele vin din ce ai ales mai sus, deci sunt estimarea ta.</p>';
       store("cost4", state);
@@ -360,6 +376,17 @@
       if (b.hasAttribute("data-key")) { first(); state[b.getAttribute("data-side")][b.getAttribute("data-key")] = +b.getAttribute("data-i"); render(); }
       else if (b.hasAttribute("data-pick")) { first(); var p = picks[+b.getAttribute("data-pick")]; state.b.name = p.label; state.b.price = p.price; state.b.pid = p.id; render(); track("ct_tool_preset", { tool: "cost_ora", product_id: p.id }); }
       else if (b.getAttribute("data-r") === "reset") { state = JSON.parse(JSON.stringify(EXAMPLE)); render(); }
+      else if (b.hasAttribute("data-tab")) {
+        var tab = b.getAttribute("data-tab");
+        root.querySelector(".ct-costgrid").setAttribute("data-active", tab);
+        root.querySelectorAll(".ct-tab").forEach(function (x) { x.setAttribute("aria-selected", String(x === b)); });
+        render();
+        track("ct_tool_tab", { tool: "cost_ora", tab: tab });
+      }
+      else if (b.getAttribute("data-r") === "jump") {
+        var res = root.querySelector(".ct-costresult");
+        window.scrollTo({ top: res.getBoundingClientRect().top + window.pageYOffset - 90, behavior: "smooth" });
+      }
     });
     var picks = presets.slice();
     var COLORS = /\b(verde|ro[sș]u|mov|albastru|galben|roz|menta|portocaliu|negru|alb|natur|gri|turcoaz)\b/gi;
@@ -396,6 +423,14 @@
         renderPicks(); render();
       }).catch(function () { renderPicks(); });
     renderPicks();
+    // bara cu rezultatul: doar pe ecrane înguste, cât calculatorul e la vedere și rezultatul nu
+    if ("IntersectionObserver" in window) {
+      var bar = root.querySelector(".ct-livebar"), toolOn = false, resOn = false, mq = window.matchMedia("(max-width: 700px)");
+      var upd = function () { bar.classList.toggle("is-on", mq.matches && toolOn && !resOn); };
+      new IntersectionObserver(function (e) { toolOn = e[0].isIntersecting; upd(); }, { rootMargin: "0px 0px -35% 0px" }).observe(root.querySelector(".ct-costgrid"));
+      new IntersectionObserver(function (e) { resOn = e[0].isIntersecting; upd(); }, { threshold: 0.35 }).observe(root.querySelector(".ct-costresult"));
+      if (mq.addEventListener) mq.addEventListener("change", upd);
+    }
     render();
   }
 

@@ -1,5 +1,5 @@
 /*!
- * Creatoys Blog Kit v1.4.0
+ * Creatoys Blog Kit v1.5.0
  * Sistemul de design pentru articolele de pe creatoys.ro/blog.
  * Totul e sub .ct-article, ca să nu atingă tema XStore.
  */
@@ -287,6 +287,41 @@
 .ct-pick:hover{border-color:var(--ct-green)}
 .ct-pick[aria-pressed="true"]{border-color:var(--ct-green-deep);background:var(--ct-pale);box-shadow:0 0 0 2px var(--ct-green-deep) inset}
 .ct-picks__more{font-size:.85rem;margin:.1rem 0 0!important}
+.ct-costintro{font-size:1rem;color:var(--ct-ink);margin:0 0 .8rem!important;font-weight:600}
+.ct-tabs{display:none}
+.ct-livebar{display:none}
+@container ct (max-width: 700px){
+  .ct-tabs{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;background:var(--ct-white);border-radius:14px;padding:.3rem;margin:0 0 .8rem}
+  .ct-tab{font:700 .92rem/1.25 var(--ct-font);border:0;border-radius:11px;background:transparent;color:var(--ct-muted);padding:.55rem .4rem;min-height:52px;cursor:pointer;text-align:center}
+  .ct-tab b{display:block;font-size:.95rem;color:inherit;margin-top:.1rem}
+  .ct-tab[aria-selected="true"]{background:var(--ct-grad);color:#fff}
+  .ct-costgrid{display:block}
+  .ct-costgrid[data-active="a"] .ct-costcard--b,.ct-costgrid[data-active="b"] .ct-costcard--a{display:none}
+  .ct-seg{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:.3rem;margin-right:-1.1rem;padding-right:1.1rem}
+  .ct-seg .ct-choice{flex:0 0 auto;scroll-snap-align:start;white-space:nowrap;font-size:.95rem;min-height:44px}
+  .ct-seg__hint,.ct-costcard__sub,.ct-costrow__meta,.ct-costnote,.ct-presets{font-size:.92rem}
+  .ct-range__ends{font-size:.88rem}
+  .ct-article .ct-pick__name{font-size:.9rem}
+  .ct-article .ct-pick__price{font-size:.95rem}
+  .ct-article .ct-picks__more{font-size:.95rem}
+  .ct-pick{flex-basis:128px}
+  .ct-step{font-size:1rem}
+  .ct-article .ct-costnote,.ct-article .ct-costrow__meta{font-size:.92rem}
+  .ct-article .ct-costrow__val small{font-size:.9rem}
+  .ct-article .ct-step__n{flex:0 0 28px;width:28px;height:28px;font-size:.9rem}
+}
+@media (max-width: 700px){
+  .ct-livebar{position:fixed;left:0;right:0;bottom:0;z-index:99998;display:flex;align-items:center;gap:.8rem;background:#fff;border-top:1px solid var(--ct-line);
+    box-shadow:0 -8px 24px -12px rgba(31,89,0,.35);padding:.6rem 1rem calc(.6rem + env(safe-area-inset-bottom,0px));font-family:var(--ct-font);
+    transform:translateY(110%);transition:transform .25s ease;visibility:hidden}
+  .ct-livebar.is-on{transform:none;visibility:visible}
+  .ct-livebar__vals{display:flex;gap:1rem;flex:1;min-width:0}
+  .ct-livebar__vals span{display:flex;flex-direction:column;line-height:1.2}
+  .ct-livebar__vals small{font-size:.88rem;color:var(--ct-muted)}
+  .ct-livebar__vals b{font-size:1.05rem;color:#B0612A;white-space:nowrap}
+  .ct-livebar__vals b.is-best{color:var(--ct-green-deep)}
+  .ct-livebar .ct-btn{min-height:44px;padding:.55rem 1rem;font-size:.95rem;white-space:nowrap}
+}
 .ct-costresult{margin-top:1rem;background:var(--ct-white);border-radius:18px;padding:1.1rem 1.2rem}
 .ct-costverdict{font-size:1.15rem;line-height:1.45;margin:0 0 1rem!important;color:var(--ct-ink)}
 .ct-costrow{margin:0 0 1rem}
