@@ -1,5 +1,5 @@
 /*!
- * Creatoys Blog Kit v1.0.0
+ * Creatoys Blog Kit v1.1.0
  * Sistemul de design pentru articolele de pe creatoys.ro/blog.
  * Totul e sub .ct-article, ca să nu atingă tema XStore.
  */
@@ -238,3 +238,17 @@
   .ct-progress,.ct-cta,.ct-products,.ct-tool fieldset,.ct-tool__actions{display:none!important}
   .ct-tool{background:none;padding:0}
 }
+
+/* ---------- Șablonul paginii de articol (XStore) ----------
+ * Se aplică DOAR paginilor care conțin .ct-article (prin :has), restul site-ului rămâne neatins.
+ * Titlu mare, verde, centrat deasupra; fără imaginea pătrată de 1000 px; fără bara laterală.
+ * Imaginea principală rămâne setată pe articol (listă blog, Facebook, WhatsApp), doar nu se mai afișează aici.
+ */
+body:has(.ct-article) .post-single .post-header .wp-picture{display:none!important}
+body:has(.ct-article) .post-single .post-heading{text-align:center;padding:18px 0 28px;margin:0 auto 28px;max-width:860px;border-bottom:1px solid #E3EDD8}
+body:has(.ct-article) .post-single .post-heading .entry-title{font-family:Quicksand,sans-serif!important;font-size:clamp(1.9rem,1.3rem + 1.8vw,2.7rem)!important;line-height:1.2!important;color:#1F5900!important;font-weight:700!important;margin:0 auto 14px!important;text-wrap:balance;letter-spacing:-.01em}
+body:has(.ct-article) .post-single .meta-post{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;color:#5F6B57!important;font-size:.95rem}
+body:has(.ct-article) .post-single .meta-post .views-count{display:none!important}
+body:has(.ct-article) .sidebar.sidebar-right{display:none!important}
+body:has(.ct-article) .col-md-9:has(.ct-article){width:100%!important;max-width:980px!important;flex:0 0 100%!important;margin:0 auto!important;float:none!important}
+body:has(.ct-article) .page-heading{text-align:center}
