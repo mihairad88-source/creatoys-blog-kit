@@ -1,5 +1,5 @@
 /*!
- * Creatoys Blog Kit v1.2.0
+ * Creatoys Blog Kit v1.3.0
  * Module pentru articolele de pe creatoys.ro/blog. Fără dependențe.
  * Principiu: articolul e complet și fără acest fișier; scriptul adaugă date live și interactivitate.
  */
@@ -264,103 +264,115 @@
   }
 
   /* ---------- 5. Calculatorul „cost pe oră de joacă” ---------- */
-  // Toate cifrele vin de la părinte. Calculatorul doar face împărțirea și o arată limpede.
+  // O cifră (prețul) și patru atingeri. Butoanele au valori transparente, afișate sub ele.
   var WEEKS_PER_MONTH = 4.345;
-  function num(v, min, max, def) { v = parseFloat(String(v).replace(",", ".")); return isFinite(v) ? Math.min(max, Math.max(min, v)) : def; }
+  var FREQ = [
+    { label: "Rar", hint: "cam o oră pe lună, adică ¼ de oră pe săptămână", h: 0.25 },
+    { label: "De câteva ori pe săptămână", hint: "≈ 1,5 ore pe săptămână", h: 1.5 },
+    { label: "Aproape zilnic", hint: "≈ 3 ore pe săptămână", h: 3 },
+    { label: "În fiecare zi, mult", hint: "≈ 7 ore pe săptămână", h: 7 }
+  ];
+  var DUR = [
+    { label: "Câteva săptămâni", hint: "≈ 2 săptămâni", m: 0.5 },
+    { label: "Câteva luni", hint: "≈ 3 luni", m: 3 },
+    { label: "Un an", hint: "12 luni", m: 12 },
+    { label: "2-3 ani", hint: "≈ 30 de luni", m: 30 },
+    { label: "Trece și la fratele mai mic", hint: "≈ 4 ani", m: 48 }
+  ];
+  // „3 ore”, dar „20 de ore”: în română, de la 20 în sus (și la 0) numeralul cere „de”
+  function ore(n) { if (n === 1) return "o oră"; var r = n % 100; return n + (n === 0 || r >= 20 || (r === 0 && n >= 100) ? " de ore" : " ore"); }
   function lei(v) { return (v >= 10 ? Math.round(v) : Math.round(v * 100) / 100).toLocaleString("ro-RO", { maximumFractionDigits: 2 }) + " lei"; }
-  function hoursOf(t) { return t.min / 60 * t.days * WEEKS_PER_MONTH * t.months; }
 
   function initCost(root) {
     var uid = "ctc" + Math.random().toString(36).slice(2, 6);
-    var saved = store("cost") || null;
-    var def = saved || {
-      a: { name: "Jucăria cu sunete și lumini", price: 150, min: 20, days: 5, months: 1 },
-      b: { name: "Setul de plăci magnetice, 32 de piese", price: 238, min: 30, days: 4, months: 24 }
-    };
     var presets = [
       { id: 714835, label: "MAGNA-TILES Clear Colors, 32 de piese", price: 238 },
       { id: 743159, label: "Bilele din lemn Grapat, 36 de piese", price: 99 },
       { id: 16196, label: "Traseul Quercetti Migoga Basic", price: 109 }
     ];
+    var EXAMPLE = { a: { name: "", price: 150, f: 1, d: 0 }, b: { name: "MAGNA-TILES Clear Colors, 32 de piese", price: 238, f: 2, d: 3 } };
+    var state = store("cost2") || JSON.parse(JSON.stringify(EXAMPLE));
     var started = false;
 
-    function field(side, key, label, suffix, min, max, step) {
-      var id = uid + side + key;
-      return '<label class="ct-field" for="' + id + '"><span>' + label + '</span>' +
-        '<span class="ct-field__in"><input id="' + id + '" data-side="' + side + '" data-key="' + key + '" type="number" inputmode="decimal" min="' + min + '" max="' + max + '" step="' + step + '">' +
-        '<em>' + suffix + '</em></span></label>';
+    function seg(side, key, list) {
+      return '<div class="ct-seg" role="radiogroup" aria-label="' + (key === "f" ? "Cât se joacă" : "Cât timp o va folosi") + '">' +
+        list.map(function (o, i) { return '<button type="button" role="radio" class="ct-choice" data-side="' + side + '" data-key="' + key + '" data-i="' + i + '">' + o.label + "</button>"; }).join("") +
+        '</div><p class="ct-seg__hint" data-hint="' + side + key + '"></p>';
     }
-    function card(side, title) {
-      return '<fieldset class="ct-costcard ct-costcard--' + side + '"><legend>' + title + '</legend>' +
-        '<label class="ct-field ct-field--name" for="' + uid + side + 'name"><span>Ce jucărie e</span><input id="' + uid + side + 'name" data-side="' + side + '" data-key="name" type="text" maxlength="60"></label>' +
-        field(side, "price", "Cât costă", "lei", 1, 20000, 1) +
-        field(side, "min", "Cât se joacă cu ea într-o zi", "minute", 1, 600, 5) +
-        field(side, "days", "În câte zile pe săptămână", "zile", 1, 7, 1) +
-        field(side, "months", "Câte luni o va folosi, cu tot cu frații", "luni", 1, 120, 1) +
-        (side === "b" ? '<div class="ct-presets"><span>Sau alege din magazin:</span>' + presets.map(function (p, i) {
-          return '<button type="button" class="ct-chip" data-preset="' + i + '">' + esc(p.label) + ' · <b data-price-for="' + p.id + '">' + p.price + ' lei</b></button>';
+    function card(side, title, sub) {
+      return '<div class="ct-costcard ct-costcard--' + side + '"><p class="ct-costcard__title">' + title + '</p><p class="ct-costcard__sub">' + sub + "</p>" +
+        '<label class="ct-step" for="' + uid + side + '"><span class="ct-step__n">1</span> Cât costă <output class="ct-pricetag" data-out="' + side + '"></output></label>' +
+        '<input class="ct-range" id="' + uid + side + '" data-side="' + side + '" data-key="price" type="range" min="10" max="800" step="1">' +
+        '<div class="ct-range__ends"><span>10 lei</span><span>800 lei</span></div>' +
+        (side === "b" ? '<div class="ct-presets">' + presets.map(function (p, i) {
+          return '<button type="button" class="ct-chip" data-preset="' + i + '">' + esc(p.label) + ' · <b data-price-for="' + p.id + '">' + p.price + " lei</b></button>";
         }).join("") + "</div>" : "") +
-        "</fieldset>";
+        '<p class="ct-step"><span class="ct-step__n">2</span> Cât se joacă cu ea</p>' + seg(side, "f", FREQ) +
+        '<p class="ct-step"><span class="ct-step__n">3</span> Cât timp o va folosi</p>' + seg(side, "d", DUR) + "</div>";
     }
-
     root.innerHTML =
-      '<div class="ct-tool__head"><p class="ct-tool__lead">Pune cifrele tale. Cele de mai jos sunt doar un exemplu, schimbă-le după cum se joacă copilul tău.</p></div>' +
-      '<div class="ct-costgrid">' + card("a", "Jucăria A") + card("b", "Jucăria B") + "</div>" +
+      '<div class="ct-costgrid">' +
+      card("a", "Jucăria A", "Una pe care o ai deja sau pe care o ai în vedere.") +
+      card("b", "Jucăria B", "Cea cu care o compari. Poți alege direct din magazin.") + "</div>" +
       '<div class="ct-costresult" aria-live="polite"></div>' +
       '<div class="ct-tool__actions"><button type="button" class="ct-btn ct-btn--outline" data-r="reset">Înapoi la exemplu</button></div>';
 
-    var state = JSON.parse(JSON.stringify(def));
-    function fill() {
-      root.querySelectorAll("input[data-key]").forEach(function (inp) { inp.value = state[inp.getAttribute("data-side")][inp.getAttribute("data-key")]; });
+    function hours(t) { return FREQ[t.f].h * WEEKS_PER_MONTH * DUR[t.d].m; }
+    function name(side) { return state[side].name || (side === "a" ? "jucăria A" : "jucăria B"); }
+    function sync() {
+      ["a", "b"].forEach(function (side) {
+        var inp = root.querySelector('input[data-side="' + side + '"]'); inp.value = state[side].price;
+        var pct = (state[side].price - 10) / 790 * 100; inp.style.setProperty("--ct-fill", Math.max(0, Math.min(100, pct)) + "%");
+        root.querySelector('[data-out="' + side + '"]').textContent = Math.round(state[side].price) + " lei";
+        ["f", "d"].forEach(function (k) {
+          root.querySelectorAll('.ct-choice[data-side="' + side + '"][data-key="' + k + '"]').forEach(function (b) {
+            b.setAttribute("aria-checked", String(+b.getAttribute("data-i") === state[side][k]));
+            b.setAttribute("aria-pressed", String(+b.getAttribute("data-i") === state[side][k]));
+          });
+          root.querySelector('[data-hint="' + side + k + '"]').textContent = (k === "f" ? FREQ : DUR)[state[side][k]].hint;
+        });
+      });
     }
     function render() {
-      var A = state.a, B = state.b, ha = hoursOf(A), hb = hoursOf(B), ca = A.price / ha, cb = B.price / hb;
-      var cheaper = ca <= cb ? "a" : "b", ratio = Math.max(ca, cb) / Math.min(ca, cb);
-      var max = Math.max(ca, cb);
+      sync();
+      var A = state.a, B = state.b, ha = hours(A), hb = hours(B), ca = A.price / ha, cb = B.price / hb;
+      var best = ca <= cb ? "a" : "b", ratio = Math.max(ca, cb) / Math.min(ca, cb), max = Math.max(ca, cb);
+      var r = ratio >= 10 ? Math.round(ratio) : ratio.toFixed(1).replace(".", ",");
+      var verdict = ratio < 1.15 ? "Cele două jucării te costă cam la fel pe oră de joacă."
+        : "Cu <strong>" + esc(name(best)) + "</strong>, ora de joacă iese de " + r + " ori mai ieftină" +
+          (state[best].price > state[best === "a" ? "b" : "a"].price ? ", deși costă mai mult la cumpărare." : ".");
       function row(side, t, h, c) {
-        return '<div class="ct-costrow' + (side === cheaper ? " is-best" : "") + '"><div class="ct-costrow__top"><span class="ct-costrow__name">' + esc(t.name || (side === "a" ? "Jucăria A" : "Jucăria B")) + '</span>' +
-          '<span class="ct-costrow__val">' + lei(c) + ' <small>pe oră</small></span></div>' +
+        return '<div class="ct-costrow' + (side === best ? " is-best" : "") + '"><div class="ct-costrow__top"><span class="ct-costrow__name">' + esc(name(side).charAt(0).toUpperCase() + name(side).slice(1)) + "</span>" +
+          '<span class="ct-costrow__val">' + lei(c) + " <small>pe oră</small></span></div>" +
           '<div class="ct-bar"><span style="width:' + Math.max(3, Math.round(c / max * 100)) + '%"></span></div>' +
-          '<p class="ct-costrow__meta">' + lei(t.price) + " la cumpărare · aproximativ " + Math.round(h) + (Math.round(h) === 1 ? " oră" : " ore") + " de joacă în total</p></div>";
+          '<p class="ct-costrow__meta">' + lei(t.price) + " la cumpărare · cam " + ore(Math.round(h)) + " de joacă în total</p></div>";
       }
-      var same = ratio < 1.15;
-      var verdict = same ? "Cele două jucării te costă cam la fel pe oră de joacă."
-        : "Cu <strong>" + esc((cheaper === "a" ? A : B).name || "jucăria " + cheaper.toUpperCase()) + "</strong>, ora de joacă iese de " + (ratio >= 10 ? Math.round(ratio) : ratio.toFixed(1).replace(".", ",")) + " ori mai ieftină" +
-          ((cheaper === "a" ? A.price > B.price : B.price > A.price) ? ", deși jucăria costă mai mult la cumpărare." : ".");
       root.querySelector(".ct-costresult").innerHTML = '<p class="ct-costverdict">' + verdict + "</p>" + row("a", A, ha, ca) + row("b", B, hb, cb) +
-        '<p class="ct-costnote">Calculul: prețul împărțit la orele de joacă (minute pe zi × zile pe săptămână × 4,3 săptămâni × luni). Cifrele sunt estimările tale, nu ale noastre.</p>';
-      store("cost", state);
+        '<p class="ct-costnote">Calculul: prețul împărțit la orele de joacă. Orele vin din ce ai ales mai sus, deci sunt estimarea ta.</p>';
+      store("cost2", state);
     }
+    function first() { if (!started) { started = true; track("ct_tool_start", { tool: "cost_ora" }); } }
     root.addEventListener("input", function (e) {
-      var inp = e.target, side = inp.getAttribute("data-side"), key = inp.getAttribute("data-key");
-      if (!side) return;
-      if (!started) { started = true; track("ct_tool_start", { tool: "cost_ora" }); }
-      state[side][key] = key === "name" ? inp.value : num(inp.value, parseFloat(inp.min) || 1, parseFloat(inp.max) || 1e6, state[side][key]);
-      render();
+      var inp = e.target; if (inp.getAttribute("data-key") !== "price") return;
+      first(); var v = parseFloat(inp.value); if (isFinite(v) && v > 0) { state[inp.getAttribute("data-side")].price = Math.min(800, v); if (inp.getAttribute("data-side") === "b") state.b.name = ""; render(); }
     });
     root.addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;
-      if (b.hasAttribute("data-preset")) {
-        var p = presets[+b.getAttribute("data-preset")];
-        state.b.name = p.label; state.b.price = p.price; fill(); render();
-        track("ct_tool_preset", { tool: "cost_ora", product_id: p.id });
-      } else if (b.getAttribute("data-r") === "reset") {
-        state = JSON.parse(JSON.stringify({ a: { name: "Jucăria cu sunete și lumini", price: 150, min: 20, days: 5, months: 1 }, b: { name: "Setul de plăci magnetice, 32 de piese", price: 238, min: 30, days: 4, months: 24 } }));
-        fill(); render();
-      }
+      if (b.hasAttribute("data-key")) { first(); state[b.getAttribute("data-side")][b.getAttribute("data-key")] = +b.getAttribute("data-i"); render(); }
+      else if (b.hasAttribute("data-preset")) { first(); var p = presets[+b.getAttribute("data-preset")]; state.b.name = p.label; state.b.price = p.price; render(); track("ct_tool_preset", { tool: "cost_ora", product_id: p.id }); }
+      else if (b.getAttribute("data-r") === "reset") { state = JSON.parse(JSON.stringify(EXAMPLE)); render(); }
     });
-    // prețurile reale din magazin, când pagina e pe creatoys.ro
     fetch(STORE_API + "/products?include=" + presets.map(function (p) { return p.id; }).join(",") + "&per_page=10", { credentials: "omit" })
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (list) {
         list.forEach(function (pr) {
-          var p = presets.filter(function (x) { return x.id === pr.id; })[0];
-          if (!p || !pr.prices) return;
+          var p = presets.filter(function (x) { return x.id === pr.id; })[0]; if (!p || !pr.prices) return;
           p.price = Math.round(parseInt(pr.prices.price, 10) / Math.pow(10, pr.prices.currency_minor_unit || 0));
           var el = root.querySelector('[data-price-for="' + p.id + '"]'); if (el) el.textContent = p.price + " lei";
+          if (state.b.name === p.label) { state.b.price = p.price; render(); }
         });
       }).catch(function () {});
-    fill(); render();
+    render();
   }
 
   /* ---------- Pornire ---------- */
