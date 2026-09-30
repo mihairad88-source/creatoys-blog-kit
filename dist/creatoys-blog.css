@@ -1,5 +1,5 @@
 /*!
- * Creatoys Blog Kit v1.1.0
+ * Creatoys Blog Kit v1.2.0
  * Sistemul de design pentru articolele de pe creatoys.ro/blog.
  * Totul e sub .ct-article, ca să nu atingă tema XStore.
  */
@@ -238,6 +238,42 @@
   .ct-progress,.ct-cta,.ct-products,.ct-tool fieldset,.ct-tool__actions{display:none!important}
   .ct-tool{background:none;padding:0}
 }
+
+/* ---------- Calculatorul „cost pe oră de joacă” ---------- */
+.ct-costgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.9rem}
+.ct-costcard{background:var(--ct-white);border:0;border-radius:18px;padding:1rem 1.1rem 1.1rem;margin:0;min-width:0;border-top:5px solid var(--ct-orange)}
+.ct-costcard--b{border-top-color:var(--ct-green)}
+.ct-costcard legend{display:block;float:left;width:100%;font-weight:700;font-size:1.05rem;color:var(--ct-green-deep);margin:0 0 .6rem;padding:0}
+.ct-costcard legend+*{clear:both}
+.ct-costcard .ct-field--name{display:flex;flex-direction:column;align-items:stretch;width:100%}
+.ct-field{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.45rem 0;border-bottom:1px solid var(--ct-line);font-size:.95rem;line-height:1.35}
+.ct-field:last-of-type{border-bottom:0}
+.ct-field>span:first-child{flex:1 1 auto;min-width:0}
+.ct-field__in{display:inline-flex;align-items:center;gap:.35rem;flex:0 0 auto}
+.ct-field input{font:600 16px var(--ct-font);color:var(--ct-ink);border:2px solid var(--ct-line);border-radius:10px;padding:.45rem .55rem;width:5.6rem;text-align:right;background:var(--ct-white);min-height:44px}
+.ct-field input:focus{outline:none;border-color:var(--ct-green)}
+.ct-field em{font-style:normal;color:var(--ct-muted);font-size:.85rem;width:3.4rem}
+.ct-field--name{flex-direction:column;align-items:stretch;gap:.35rem}
+.ct-field--name input{width:100%;text-align:left}
+.ct-presets{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.7rem;font-size:.85rem;color:var(--ct-muted)}
+.ct-presets>span{width:100%}
+.ct-chip{font:600 .85rem var(--ct-font);border:1px solid var(--ct-line);background:var(--ct-pale);color:var(--ct-green-deep);border-radius:999px;padding:.45rem .8rem;cursor:pointer;min-height:36px;text-align:left}
+.ct-chip:hover{border-color:var(--ct-green)}
+.ct-costresult{margin-top:1rem;background:var(--ct-white);border-radius:18px;padding:1.1rem 1.2rem}
+.ct-costverdict{font-size:1.15rem;line-height:1.45;margin:0 0 1rem!important;color:var(--ct-ink)}
+.ct-costrow{margin:0 0 1rem}
+.ct-costrow__top{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap}
+.ct-costrow__name{font-weight:700;color:var(--ct-ink);min-width:0}
+.ct-costrow__val{font-weight:700;font-size:1.35rem;color:#B0612A;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ct-costrow.is-best .ct-costrow__val{color:var(--ct-green-deep)}
+.ct-costrow__val small{font-size:.8rem;font-weight:600;color:var(--ct-muted)}
+.ct-bar{height:12px;border-radius:999px;background:var(--ct-pale);margin:.4rem 0 .35rem;overflow:hidden}
+.ct-bar span{display:block;height:100%;border-radius:999px;background:var(--ct-grad-warm);transition:width .35s ease}
+.ct-costrow.is-best .ct-bar span{background:var(--ct-grad)}
+.ct-costrow__meta{font-size:.88rem;color:var(--ct-muted);margin:0!important}
+.ct-costnote{font-size:.85rem;color:var(--ct-muted);margin:.6rem 0 0!important;border-top:1px dashed var(--ct-line);padding-top:.7rem}
+/* când JS-ul rulează, exemplul static din articol se ascunde */
+.ct-js [data-ct] .ct-static{display:none}
 
 /* ---------- Șablonul paginii de articol (XStore) ----------
  * Se aplică DOAR paginilor care conțin .ct-article (prin :has), restul site-ului rămâne neatins.

@@ -1,5 +1,5 @@
 /*!
- * Creatoys Blog Kit v1.0.0
+ * Creatoys Blog Kit v1.2.0
  * Module pentru articolele de pe creatoys.ro/blog. Fără dependențe.
  * Principiu: articolul e complet și fără acest fișier; scriptul adaugă date live și interactivitate.
  */
@@ -263,16 +263,120 @@
     }, true);
   }
 
+  /* ---------- 5. Calculatorul „cost pe oră de joacă” ---------- */
+  // Toate cifrele vin de la părinte. Calculatorul doar face împărțirea și o arată limpede.
+  var WEEKS_PER_MONTH = 4.345;
+  function num(v, min, max, def) { v = parseFloat(String(v).replace(",", ".")); return isFinite(v) ? Math.min(max, Math.max(min, v)) : def; }
+  function lei(v) { return (v >= 10 ? Math.round(v) : Math.round(v * 100) / 100).toLocaleString("ro-RO", { maximumFractionDigits: 2 }) + " lei"; }
+  function hoursOf(t) { return t.min / 60 * t.days * WEEKS_PER_MONTH * t.months; }
+
+  function initCost(root) {
+    var uid = "ctc" + Math.random().toString(36).slice(2, 6);
+    var saved = store("cost") || null;
+    var def = saved || {
+      a: { name: "Jucăria cu sunete și lumini", price: 150, min: 20, days: 5, months: 1 },
+      b: { name: "Setul de plăci magnetice, 32 de piese", price: 238, min: 30, days: 4, months: 24 }
+    };
+    var presets = [
+      { id: 714835, label: "MAGNA-TILES Clear Colors, 32 de piese", price: 238 },
+      { id: 743159, label: "Bilele din lemn Grapat, 36 de piese", price: 99 },
+      { id: 16196, label: "Traseul Quercetti Migoga Basic", price: 109 }
+    ];
+    var started = false;
+
+    function field(side, key, label, suffix, min, max, step) {
+      var id = uid + side + key;
+      return '<label class="ct-field" for="' + id + '"><span>' + label + '</span>' +
+        '<span class="ct-field__in"><input id="' + id + '" data-side="' + side + '" data-key="' + key + '" type="number" inputmode="decimal" min="' + min + '" max="' + max + '" step="' + step + '">' +
+        '<em>' + suffix + '</em></span></label>';
+    }
+    function card(side, title) {
+      return '<fieldset class="ct-costcard ct-costcard--' + side + '"><legend>' + title + '</legend>' +
+        '<label class="ct-field ct-field--name" for="' + uid + side + 'name"><span>Ce jucărie e</span><input id="' + uid + side + 'name" data-side="' + side + '" data-key="name" type="text" maxlength="60"></label>' +
+        field(side, "price", "Cât costă", "lei", 1, 20000, 1) +
+        field(side, "min", "Cât se joacă cu ea într-o zi", "minute", 1, 600, 5) +
+        field(side, "days", "În câte zile pe săptămână", "zile", 1, 7, 1) +
+        field(side, "months", "Câte luni o va folosi, cu tot cu frații", "luni", 1, 120, 1) +
+        (side === "b" ? '<div class="ct-presets"><span>Sau alege din magazin:</span>' + presets.map(function (p, i) {
+          return '<button type="button" class="ct-chip" data-preset="' + i + '">' + esc(p.label) + ' · <b data-price-for="' + p.id + '">' + p.price + ' lei</b></button>';
+        }).join("") + "</div>" : "") +
+        "</fieldset>";
+    }
+
+    root.innerHTML =
+      '<div class="ct-tool__head"><p class="ct-tool__lead">Pune cifrele tale. Cele de mai jos sunt doar un exemplu, schimbă-le după cum se joacă copilul tău.</p></div>' +
+      '<div class="ct-costgrid">' + card("a", "Jucăria A") + card("b", "Jucăria B") + "</div>" +
+      '<div class="ct-costresult" aria-live="polite"></div>' +
+      '<div class="ct-tool__actions"><button type="button" class="ct-btn ct-btn--outline" data-r="reset">Înapoi la exemplu</button></div>';
+
+    var state = JSON.parse(JSON.stringify(def));
+    function fill() {
+      root.querySelectorAll("input[data-key]").forEach(function (inp) { inp.value = state[inp.getAttribute("data-side")][inp.getAttribute("data-key")]; });
+    }
+    function render() {
+      var A = state.a, B = state.b, ha = hoursOf(A), hb = hoursOf(B), ca = A.price / ha, cb = B.price / hb;
+      var cheaper = ca <= cb ? "a" : "b", ratio = Math.max(ca, cb) / Math.min(ca, cb);
+      var max = Math.max(ca, cb);
+      function row(side, t, h, c) {
+        return '<div class="ct-costrow' + (side === cheaper ? " is-best" : "") + '"><div class="ct-costrow__top"><span class="ct-costrow__name">' + esc(t.name || (side === "a" ? "Jucăria A" : "Jucăria B")) + '</span>' +
+          '<span class="ct-costrow__val">' + lei(c) + ' <small>pe oră</small></span></div>' +
+          '<div class="ct-bar"><span style="width:' + Math.max(3, Math.round(c / max * 100)) + '%"></span></div>' +
+          '<p class="ct-costrow__meta">' + lei(t.price) + " la cumpărare · aproximativ " + Math.round(h) + (Math.round(h) === 1 ? " oră" : " ore") + " de joacă în total</p></div>";
+      }
+      var same = ratio < 1.15;
+      var verdict = same ? "Cele două jucării te costă cam la fel pe oră de joacă."
+        : "Cu <strong>" + esc((cheaper === "a" ? A : B).name || "jucăria " + cheaper.toUpperCase()) + "</strong>, ora de joacă iese de " + (ratio >= 10 ? Math.round(ratio) : ratio.toFixed(1).replace(".", ",")) + " ori mai ieftină" +
+          ((cheaper === "a" ? A.price > B.price : B.price > A.price) ? ", deși jucăria costă mai mult la cumpărare." : ".");
+      root.querySelector(".ct-costresult").innerHTML = '<p class="ct-costverdict">' + verdict + "</p>" + row("a", A, ha, ca) + row("b", B, hb, cb) +
+        '<p class="ct-costnote">Calculul: prețul împărțit la orele de joacă (minute pe zi × zile pe săptămână × 4,3 săptămâni × luni). Cifrele sunt estimările tale, nu ale noastre.</p>';
+      store("cost", state);
+    }
+    root.addEventListener("input", function (e) {
+      var inp = e.target, side = inp.getAttribute("data-side"), key = inp.getAttribute("data-key");
+      if (!side) return;
+      if (!started) { started = true; track("ct_tool_start", { tool: "cost_ora" }); }
+      state[side][key] = key === "name" ? inp.value : num(inp.value, parseFloat(inp.min) || 1, parseFloat(inp.max) || 1e6, state[side][key]);
+      render();
+    });
+    root.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      if (b.hasAttribute("data-preset")) {
+        var p = presets[+b.getAttribute("data-preset")];
+        state.b.name = p.label; state.b.price = p.price; fill(); render();
+        track("ct_tool_preset", { tool: "cost_ora", product_id: p.id });
+      } else if (b.getAttribute("data-r") === "reset") {
+        state = JSON.parse(JSON.stringify({ a: { name: "Jucăria cu sunete și lumini", price: 150, min: 20, days: 5, months: 1 }, b: { name: "Setul de plăci magnetice, 32 de piese", price: 238, min: 30, days: 4, months: 24 } }));
+        fill(); render();
+      }
+    });
+    // prețurile reale din magazin, când pagina e pe creatoys.ro
+    fetch(STORE_API + "/products?include=" + presets.map(function (p) { return p.id; }).join(",") + "&per_page=10", { credentials: "omit" })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (list) {
+        list.forEach(function (pr) {
+          var p = presets.filter(function (x) { return x.id === pr.id; })[0];
+          if (!p || !pr.prices) return;
+          p.price = Math.round(parseInt(pr.prices.price, 10) / Math.pow(10, pr.prices.currency_minor_unit || 0));
+          var el = root.querySelector('[data-price-for="' + p.id + '"]'); if (el) el.textContent = p.price + " lei";
+        });
+      }).catch(function () {});
+    fill(); render();
+  }
+
   /* ---------- Pornire ---------- */
   function boot() {
-    var article = document.querySelector(".ct-article");
-    if (!article || article.getAttribute("data-ct-ready")) return;
-    article.setAttribute("data-ct-ready", "1");
-    article.classList.add("ct-js");
-    initProgress(article);
-    initDetails(article);
-    article.querySelectorAll("[data-ct='produse']").forEach(initProducts);
-    article.querySelectorAll("[data-ct='cutii']").forEach(initBoxes);
+    var articles = document.querySelectorAll(".ct-article:not([data-ct-ready])");
+    if (!articles.length) return;
+    var first = articles[0];
+    initProgress(first.closest(".entry-content, .content-article, article") || first);
+    Array.prototype.forEach.call(articles, function (article) {
+      article.setAttribute("data-ct-ready", "1");
+      article.classList.add("ct-js");
+      initDetails(article);
+      article.querySelectorAll("[data-ct='produse']").forEach(initProducts);
+      article.querySelectorAll("[data-ct='cutii']").forEach(initBoxes);
+      article.querySelectorAll("[data-ct='cost-ora']").forEach(initCost);
+    });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
