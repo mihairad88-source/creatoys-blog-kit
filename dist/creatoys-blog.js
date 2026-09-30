@@ -1,5 +1,5 @@
 /*!
- * Creatoys Blog Kit v1.3.0
+ * Creatoys Blog Kit v1.4.0
  * Module pentru articolele de pe creatoys.ro/blog. Fără dependențe.
  * Principiu: articolul e complet și fără acest fișier; scriptul adaugă date live și interactivitate.
  */
@@ -286,12 +286,12 @@
   function initCost(root) {
     var uid = "ctc" + Math.random().toString(36).slice(2, 6);
     var presets = [
-      { id: 714835, label: "MAGNA-TILES Clear Colors, 32 de piese", price: 238 },
-      { id: 743159, label: "Bilele din lemn Grapat, 36 de piese", price: 99 },
-      { id: 16196, label: "Traseul Quercetti Migoga Basic", price: 109 }
+      { id: 714835, label: "MAGNA-TILES Clear Colors, 32 de piese", price: 238, img: "https://www.creatoys.ro/wp-content/uploads/2022/07/Magna-Tiles-02132-Clear-Colors-32-1-300x300.jpg" },
+      { id: 743159, label: "Bilele din lemn Grapat, 36 de piese", price: 99, img: "https://www.creatoys.ro/wp-content/uploads/2026/04/Grapat-Bile-din-lemn-set-36-piese-01-300x300.webp" },
+      { id: 16196, label: "Traseul Quercetti Migoga Basic", price: 109, img: "" }
     ];
-    var EXAMPLE = { a: { name: "", price: 150, f: 1, d: 1 }, b: { name: "MAGNA-TILES Clear Colors, 32 de piese", price: 238, f: 2, d: 3 } };
-    var state = store("cost3") || JSON.parse(JSON.stringify(EXAMPLE));
+    var EXAMPLE = { a: { name: "", price: 150, f: 1, d: 1 }, b: { name: "MAGNA-TILES Clear Colors, 32 de piese", price: 238, f: 2, d: 3, pid: 714835 } };
+    var state = store("cost4") || JSON.parse(JSON.stringify(EXAMPLE));
     var started = false;
 
     function seg(side, key, list) {
@@ -302,27 +302,26 @@
     function card(side, title, sub) {
       return '<div class="ct-costcard ct-costcard--' + side + '"><p class="ct-costcard__title">' + title + '</p><p class="ct-costcard__sub">' + sub + "</p>" +
         '<label class="ct-step" for="' + uid + side + '"><span class="ct-step__n">1</span> Cât costă <output class="ct-pricetag" data-out="' + side + '"></output></label>' +
-        '<input class="ct-range" id="' + uid + side + '" data-side="' + side + '" data-key="price" type="range" min="10" max="800" step="1">' +
-        '<div class="ct-range__ends"><span>10 lei</span><span>800 lei</span></div>' +
-        (side === "b" ? '<div class="ct-presets">' + presets.map(function (p, i) {
-          return '<button type="button" class="ct-chip" data-preset="' + i + '">' + esc(p.label) + ' · <b data-price-for="' + p.id + '">' + p.price + " lei</b></button>";
-        }).join("") + "</div>" : "") +
+        '<input class="ct-range" id="' + uid + side + '" data-side="' + side + '" data-key="price" type="range" min="10" max="1000" step="1">' +
+        '<div class="ct-range__ends"><span>10 lei</span><span>1.000 lei</span></div>' +
+        (side === "b" ? '<div class="ct-picks" role="group" aria-label="Jucării open-ended din magazin"></div>' +
+          '<p class="ct-picks__more"><a href="https://www.creatoys.ro/categorie-produs/creative/open-ended/">Vezi toate jucăriile open-ended</a></p>' : "") +
         '<p class="ct-step"><span class="ct-step__n">2</span> Cât se joacă cu ea</p>' + seg(side, "f", FREQ) +
         '<p class="ct-step"><span class="ct-step__n">3</span> Cât timp o va folosi</p>' + seg(side, "d", DUR) + "</div>";
     }
     root.innerHTML =
       '<div class="ct-costgrid">' +
-      card("a", "Jucăria A", "Una pe care o ai deja sau pe care o ai în vedere.") +
-      card("b", "Jucăria B", "Cea cu care o compari. Poți alege direct din magazin.") + "</div>" +
+      card("a", "Jucăria clasică", "Cu butoane, sunete sau o singură funcție. Una pe care o ai sau pe care o vezi în magazin.") +
+      card("b", "Jucăria open-ended", "Una care nu îți spune ce să faci cu ea. Alege din magazin sau trage bara.") + "</div>" +
       '<div class="ct-costresult" aria-live="polite"></div>' +
       '<div class="ct-tool__actions"><button type="button" class="ct-btn ct-btn--outline" data-r="reset">Înapoi la exemplu</button></div>';
 
     function hours(t) { return FREQ[t.f].h * WEEKS_PER_MONTH * DUR[t.d].m; }
-    function name(side) { return state[side].name || (side === "a" ? "jucăria A" : "jucăria B"); }
+    function name(side) { return state[side].name || (side === "a" ? "jucăria clasică" : "jucăria open-ended"); }
     function sync() {
       ["a", "b"].forEach(function (side) {
         var inp = root.querySelector('input[data-side="' + side + '"]'); inp.value = state[side].price;
-        var pct = (state[side].price - 10) / 790 * 100; inp.style.setProperty("--ct-fill", Math.max(0, Math.min(100, pct)) + "%");
+        var pct = (state[side].price - 10) / 990 * 100; inp.style.setProperty("--ct-fill", Math.max(0, Math.min(100, pct)) + "%");
         root.querySelector('[data-out="' + side + '"]').textContent = Math.round(state[side].price) + " lei";
         ["f", "d"].forEach(function (k) {
           root.querySelectorAll('.ct-choice[data-side="' + side + '"][data-key="' + k + '"]').forEach(function (b) {
@@ -349,29 +348,54 @@
       }
       root.querySelector(".ct-costresult").innerHTML = '<p class="ct-costverdict">' + verdict + "</p>" + row("a", A, ha, ca) + row("b", B, hb, cb) +
         '<p class="ct-costnote">Calculul: prețul împărțit la orele de joacă. Orele vin din ce ai ales mai sus, deci sunt estimarea ta.</p>';
-      store("cost3", state);
+      store("cost4", state);
     }
     function first() { if (!started) { started = true; track("ct_tool_start", { tool: "cost_ora" }); } }
     root.addEventListener("input", function (e) {
       var inp = e.target; if (inp.getAttribute("data-key") !== "price") return;
-      first(); var v = parseFloat(inp.value); if (isFinite(v) && v > 0) { state[inp.getAttribute("data-side")].price = Math.min(800, v); if (inp.getAttribute("data-side") === "b") state.b.name = ""; render(); }
+      first(); var v = parseFloat(inp.value); if (isFinite(v) && v > 0) { state[inp.getAttribute("data-side")].price = Math.min(1000, v); if (inp.getAttribute("data-side") === "b") state.b.pid = 0; if (inp.getAttribute("data-side") === "b") state.b.name = ""; render(); }
     });
     root.addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;
       if (b.hasAttribute("data-key")) { first(); state[b.getAttribute("data-side")][b.getAttribute("data-key")] = +b.getAttribute("data-i"); render(); }
-      else if (b.hasAttribute("data-preset")) { first(); var p = presets[+b.getAttribute("data-preset")]; state.b.name = p.label; state.b.price = p.price; render(); track("ct_tool_preset", { tool: "cost_ora", product_id: p.id }); }
+      else if (b.hasAttribute("data-pick")) { first(); var p = picks[+b.getAttribute("data-pick")]; state.b.name = p.label; state.b.price = p.price; state.b.pid = p.id; render(); track("ct_tool_preset", { tool: "cost_ora", product_id: p.id }); }
       else if (b.getAttribute("data-r") === "reset") { state = JSON.parse(JSON.stringify(EXAMPLE)); render(); }
     });
-    fetch(STORE_API + "/products?include=" + presets.map(function (p) { return p.id; }).join(",") + "&per_page=10", { credentials: "omit" })
+    var picks = presets.slice();
+    var COLORS = /\b(verde|ro[sș]u|mov|albastru|galben|roz|menta|portocaliu|negru|alb|natur|gri|turcoaz)\b/gi;
+    function renderPicks() {
+      var box = root.querySelector(".ct-picks"); if (!box) return;
+      box.innerHTML = picks.map(function (p, i) {
+        return '<button type="button" class="ct-pick" data-pick="' + i + '" aria-pressed="' + (state.b.pid === p.id) + '">' +
+          (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy" width="96" height="96">' : "") +
+          '<span class="ct-pick__name">' + esc(p.label) + '</span><span class="ct-pick__price">' + p.price + " lei</span></button>";
+      }).join("");
+    }
+    var baseRender = render;
+    render = function () { baseRender(); root.querySelectorAll(".ct-pick").forEach(function (b) { var p = picks[+b.getAttribute("data-pick")]; b.setAttribute("aria-pressed", String(!!p && state.b.pid === p.id)); }); };
+    fetch(STORE_API + "/products?category=4930&per_page=40&orderby=popularity&stock_status=instock", { credentials: "omit" })
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (list) {
+        var seen = {}, out = [];
         list.forEach(function (pr) {
-          var p = presets.filter(function (x) { return x.id === pr.id; })[0]; if (!p || !pr.prices) return;
-          p.price = Math.round(parseInt(pr.prices.price, 10) / Math.pow(10, pr.prices.currency_minor_unit || 0));
-          var el = root.querySelector('[data-price-for="' + p.id + '"]'); if (el) el.textContent = p.price + " lei";
-          if (state.b.name === p.label) { state.b.price = p.price; render(); }
+          if (out.length >= 12 || !pr.is_in_stock || !pr.prices) return;
+          var price = Math.round(parseInt(pr.prices.price, 10) / Math.pow(10, pr.prices.currency_minor_unit || 0));
+          if (price > 1000) return;
+          var label = String(pr.name).replace(/&#0?38;|&amp;/g, "&");
+          var key = label.toLowerCase().replace(COLORS, "").replace(/[^a-zăâîșț0-9 ]/g, " ").split(/\s+/).filter(Boolean).slice(0, 3).join(" ");
+          if (seen[key]) return; seen[key] = 1;
+          out.push({ id: pr.id, label: label, price: price, img: pr.images && pr.images[0] ? pr.images[0].thumbnail : "" });
         });
-      }).catch(function () {});
+        if (out.length >= 4) {
+          // produsul ales deja (de exemplu, cel din exemplul de pornire) rămâne primul în listă
+          var cur = presets.filter(function (p) { return p.id === state.b.pid; })[0];
+          if (cur && !out.some(function (p) { return p.id === cur.id; })) { out.unshift(cur); out.pop(); }
+          picks = out;
+        }
+        if (state.b.pid) picks.forEach(function (p) { if (p.id === state.b.pid) { state.b.price = p.price; state.b.name = p.label; } });
+        renderPicks(); render();
+      }).catch(function () { renderPicks(); });
+    renderPicks();
     render();
   }
 
